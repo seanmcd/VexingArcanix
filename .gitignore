@@ -1,0 +1,34 @@
+# Some basic ignore patterns.
+\#*#
+\#.*
+*.tmp
+*.bkp
+.DS_Store*
+.Trashes*
+Icon?
+Thumbs.db
+
+# Copied from the Pyramid project's .gitignore - seems like a good place to start.
+*.egg
+*.egg-info
+*.pyc
+*$py.class
+*.pt.py
+*.txt.py
+*~
+.coverage
+.tox/
+nosetests.xml
+pyramid/coverage.xml
+tutorial.db
+build/
+dist/
+bin/
+lib/
+include/
+.idea/
+distribute-*.tar.gz
+bookenv/
+jyenv/
+pypyenv/
+env*/
