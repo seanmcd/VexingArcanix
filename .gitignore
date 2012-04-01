@@ -24,7 +24,6 @@ tutorial.db
 build/
 dist/
 bin/
-lib/
 include/
 .idea/
 distribute-*.tar.gz
@@ -32,3 +31,4 @@ bookenv/
 jyenv/
 pypyenv/
 env*/
+vexingarcanix/static/
