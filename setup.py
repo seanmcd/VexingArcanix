@@ -3,7 +3,7 @@ import os
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.txt')).read()
+README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
@@ -26,8 +26,8 @@ setup(name='VexingArcanix',
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
         ],
-      author='',
-      author_email='',
+      author='Sean M',
+      author_email='sean@stronglyemergent.com',
       url='',
       keywords='web wsgi bfg pylons pyramid',
       packages=find_packages(),
@@ -42,4 +42,3 @@ setup(name='VexingArcanix',
       populate_VexingArcanix = vexingarcanix.scripts.populate:main
       """,
       )
-
