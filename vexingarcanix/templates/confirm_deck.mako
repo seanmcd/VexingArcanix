@@ -6,11 +6,14 @@
 
 <%def name="confirm_deck()">
     <p>Here's the data we got from the form: <br>
-        <ul id="raw_cards_list">
-            % for l in form_data:
-            <li>${l}</li>
-            % endfor
-        </ul>
+        <blockquote>
+        ${form_data}
+        </blockquote>
+##        <ul id="raw_cards_list">
+##            % for l in form_data:
+##            <li>${l}</li>
+##            % endfor
+##        </ul>
     </p>
     <hr>
     <p>Here's the deck list we got from that: <br>

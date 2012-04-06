@@ -6,15 +6,15 @@
 </%block>
 
 <%def name="question_block()">
-    <p>We're going to ask a question about ${card['name']}.</p>
+    <p>We're going to ask a question about ${card.name}.</p>
     <hr>
     <div style="width: 75%; margin: auto;">
         <p>${question}</p>
         <form action='/answer' method='post'>
-            % for a in answer_set['answer_list']:
+            % for answer in answer_set:
             <div style='display: block;'>
-                <input type='radio' name='answer' value='${a}' style='margin-right: 10px;' />
-                <span>${a} ${answer_set['suffix']}</span>
+                <input type='radio' name='answer' value='${answer}' style='margin-right: 10px;' />
+                <span>${answer} ${answer_suffix}</span>
             </div>
             % endfor
             <br>
@@ -33,5 +33,5 @@
     % else:
     <div><h2>You did not answer the previous question correctly.</h2></div>
     % endif
-    <div><p>Your answer was: ${given_answer}. The correct answer was ${answer_set['last_answer']}</p></div>
+    <div><p>Your answer was: ${given_answer}. The correct answer was ${last_answer}</p></div>
 </%def>

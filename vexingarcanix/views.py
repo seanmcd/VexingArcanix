@@ -6,7 +6,7 @@ from .models import (
     MyModel,
     )
 
-from vexingarcanix.lib import mvp
+from vexingarcanix.lib import abstracts, identifier, questions
 
 import random
 
@@ -21,9 +21,17 @@ def parse_deck(request):
     # Take a form that the user POSTs to us, turn it into a string, parse that
     # string into a dict that represents their deck.
     # FUTURE: Reject the deck if it's > 5KB of text.
-    raw, parsed = mvp.parse_deck(request.POST.get('deck_list_area'))
-    request.session['current_deck'] = parsed
-    return {'form_data': raw, 'parsed_data': parsed, }
+    raw_card_list = request.POST.get('deck_list_area')
+    card_list = identifier.find_cards(raw_card_list)
+    game_guess = identifier.find_game(card_list)
+    request.session['current_deck'] = card_list
+
+    card_object_list = [ abstracts.Card(card[1], card[0]) for card in card_list ]
+    deck_object = abstracts.Deck(card_object_list)
+    request.session['current_deck_object'] = deck_object
+
+    # change 'parsed_data' on below line and in .mako to better name
+    return {'form_data': raw_card_list, 'parsed_data': card_list, }
 
 @view_config(route_name='show_question', renderer='questions.mako')
 def generate_question(request):
@@ -31,18 +39,34 @@ def generate_question(request):
     # the current question in the session object.
     this_answer = request.session.get('given_answer', None)
     last_was_correct = request.session.get('correctness', None)
-    try:
-        this_card, this_question, this_answer_set = mvp.generate_question(request.session['current_deck'])
-        request.session['correct_answer'] = this_answer_set.get('correct', None)
-        this_answer_set['last_answer'] = request.session.get('answer_to_last_question', None)
-        print "correct answer: {}".format(this_answer_set['correct'])
-        return {'question': this_question,
-                'card': this_card,
+    current_deck_object = request.session.get('current_deck_object', None)
+    if current_deck_object:
+        new_question = abstracts.Question(current_deck_object)
+        current_question = new_question.choose_question(new_question.deck)
+        question_string, correct, possible_answers, answer_suffix, chosen_card = current_question(new_question.deck)
+        request.session['correct_answer'] = correct
+        print "correct answer: {}".format(correct)
+        return {'question': question_string,
+                'card': chosen_card,
                 'correctness': last_was_correct,
-                'given_answer': this_answer,
-                'answer_set': this_answer_set,}
-    except KeyError:
-        return HTTPFound('/')
+                'given_answer': this_answer, #request.session.get('given_answer', None),
+                'answer_set': possible_answers,
+                'last_answer': request.session.get('answer_to_last_question', None),
+                'answer_suffix': answer_suffix,
+                }
+    # try:
+    #     this_card, this_question, this_answer_set = mvp.generate_question(request.session['current_deck'])
+    #     request.session['correct_answer'] = this_answer_set.get('correct', None)
+    #     this_answer_set['last_answer'] = request.session.get('answer_to_last_question', None)
+    #     print "correct answer: {}".format(this_answer_set['correct'])
+    #     return {'question': this_question,
+    #             'card': this_card,
+    #             'correctness': last_was_correct,
+    #             'given_answer': this_answer,
+    #             'answer_set': this_answer_set,}
+    # except KeyError as e:
+    #     print "error: {}".format(e)
+    #     return HTTPFound('/')
 
 @view_config(route_name='check_answer', renderer='questions.mako', request_method='POST')
 def check_answer(request):
