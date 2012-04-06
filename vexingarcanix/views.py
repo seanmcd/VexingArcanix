@@ -49,24 +49,11 @@ def generate_question(request):
         return {'question': question_string,
                 'card': chosen_card,
                 'correctness': last_was_correct,
-                'given_answer': this_answer, #request.session.get('given_answer', None),
+                'given_answer': this_answer,
                 'answer_set': possible_answers,
                 'last_answer': request.session.get('answer_to_last_question', None),
                 'answer_suffix': answer_suffix,
                 }
-    # try:
-    #     this_card, this_question, this_answer_set = mvp.generate_question(request.session['current_deck'])
-    #     request.session['correct_answer'] = this_answer_set.get('correct', None)
-    #     this_answer_set['last_answer'] = request.session.get('answer_to_last_question', None)
-    #     print "correct answer: {}".format(this_answer_set['correct'])
-    #     return {'question': this_question,
-    #             'card': this_card,
-    #             'correctness': last_was_correct,
-    #             'given_answer': this_answer,
-    #             'answer_set': this_answer_set,}
-    # except KeyError as e:
-    #     print "error: {}".format(e)
-    #     return HTTPFound('/')
 
 @view_config(route_name='check_answer', renderer='questions.mako', request_method='POST')
 def check_answer(request):
