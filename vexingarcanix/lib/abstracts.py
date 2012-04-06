@@ -46,12 +46,12 @@ class Deck(object):
         # DFCs/werewolves in Magic, same-name-different-abilities Pokemon
         # cards, and Soul Of in L5R! This can be tricky, so just `return
         # len(decklist)` isn't good enough.
-        raise NotImplemented
+        raise NotImplementedError
 
     def is_legal(self, format):
         # Various formats, various games, but we should be able to determine
         # this with a few DB queries. Unique by game.
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class Card(object):
@@ -70,7 +70,10 @@ class Card(object):
     def canonical_name(self, name):
         """Use this to do things like strip off EX at the end of the name, turn
         'Bob' into 'Dark Confidant', etc. """
-        raise NotImplemented
+        raise NotImplementedError
+
+    def rules_text(self, name):
+        raise NotImplementedError
 
 
 class Question(object):
@@ -166,7 +169,7 @@ class Question(object):
         question_string = "If your opening hand contains zero copies of {card}, how many cards do you have to draw in order to have at least a 90 percent chance that a copy of {card} is among them?"
         chosen_card = random.choice(deck.decklist)
         answer_suffix = 'cards'
-        return None
+        raise NotImplementedError
 
     def copies_in_top_five(self, deck):
         """Another difficult question - but also somewhat difficult to code,
@@ -181,7 +184,7 @@ class Question(object):
         remaining_deck = sum([c.count for c in deck.decklist]) - 7
 
         in_top_five_cards_chance = hypergeom.sf(1, remaining_deck, remaining_copies, 5)
-        return None
+        raise NotImplementedError
 
     def gen_wrong(self, correct, flavor, **kwargs):
         """For example, 'how many copies of this card are left in your deck?'
@@ -195,6 +198,7 @@ class Question(object):
             return self._gen_wrong_float(correct, kwargs.get('variance', 2.0))
         if flavor is 'string':
             pass
+        raise NotImplementedError
 
     def _gen_wrong_float(self, correct, variance=2.0):
         """
