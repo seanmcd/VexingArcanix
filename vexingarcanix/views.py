@@ -26,7 +26,7 @@ def parse_deck(request):
     deck_object = abstracts.Deck(card_object_list)
     request.session['current_deck_object'] = deck_object
 
-    game_guess = identifier.find_game(identified_cards)
+    game_guess = identifier.find_game([card[1] for card in identified_cards])
 
     # change 'parsed_data' on below line and in .mako to better name
     return {'deck': deck_object,
