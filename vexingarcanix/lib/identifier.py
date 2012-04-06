@@ -16,6 +16,7 @@ def find_cards(text_blob):
     # e.g. 'Mountains' for 'Mountain'. Is there a reasonable way to solve that?
 
     found_cards = []
+    unknown_cards = []
     for s in text_blob.splitlines():
         # original_lines.append("Current line: {}".format(s))
         r = re.search(regex, s)
@@ -23,10 +24,8 @@ def find_cards(text_blob):
             found_cards.append(r.groups())
             print "Found card: {}".format(r.groups())
         else:
-            found_cards.append(("Unknown Card", 0))
-    # We don't need to return the original parameter, the caller already, by
-    # definition, has that information.
-    return found_cards
+            unknown_cards.append(s)
+    return found_cards, unknown cards
 
 registered_games = []
 

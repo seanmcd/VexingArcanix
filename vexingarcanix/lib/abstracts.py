@@ -94,10 +94,9 @@ class Question(object):
     object. Um. That sounds vaguely wrong. :( But let's just press on for now
     and get the MVP working.
     """
-    def __init__(self, deck):
+    def __init__(self):
         """So far the only hard prerequisite for generating a question is, we
         need a deck. No deck, no question."""
-        self.deck = deck
         self.generic_questions = [
             'copies_in_full_deck',
             'copies_in_opening_hand',
@@ -105,7 +104,7 @@ class Question(object):
             # 'draws_until_copy',
             ]
 
-    def choose_question(self, deck):
+    def choose_question(self):
         """How do we get this to work? I guess that we can use the
         generic_questions dict as a source of possibilities: each key is the name
         of a method, we choose one at random, invoking it yields a question
