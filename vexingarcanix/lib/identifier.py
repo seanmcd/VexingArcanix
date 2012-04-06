@@ -25,7 +25,7 @@ def find_cards(text_blob):
             print "Found card: {}".format(r.groups())
         else:
             unknown_cards.append(s)
-    return found_cards, unknown cards
+    return found_cards, unknown_cards
 
 registered_games = []
 

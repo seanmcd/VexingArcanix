@@ -54,11 +54,11 @@ def generate_question(request):
     print "correct answer: {}".format(correct)
 
     return {'question': question_string,
-            'possible_answers': possible_answers
+            'possible_answers': possible_answers,
             'answer_suffix': answer_suffix,
             'card': chosen_card,
             'last_given_answer': last_given_answer,
-            'last_correct_answer': last_answer_correct,
+            'last_correct_answer': last_correct_answer,
             'last_was_correct': last_was_correct,
             }
 
