@@ -25,6 +25,8 @@ you will have at least one copy of $card in your opening hand?"
   is it that card Foo is in the next N cards of your deck?"
 * The ability to know the properties of cards so that questions like "how
   likely is is that your next card is a land" are possible.
+* The ability to give users hints about the answer to the current question.
+* The ability to track a user's performance at answering questions over time.
 * The ability to remember deck lists between sessions.
 * The ability to create accounts that will remember multiple deck lists.
 * Support for games other than MtG: the highest priority after Magic is the
