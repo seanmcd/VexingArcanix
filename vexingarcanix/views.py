@@ -37,7 +37,6 @@ def parse_deck(request):
     deck_object = abstracts.Deck(card_object_list)
     request.session['current_deck_object'] = deck_object
 
-    # change 'parsed_data' on below line and in .mako to better name
     return {'deck': deck_object,
             'game_guess': request.session['game_guess'],
             'unknown_cards': unknown_cards,
@@ -53,11 +52,7 @@ def generate_question(request):
 
     # Create Cards, a Deck, and a Question for the appropriate game if this is
     # the first question after deck confirmation. Only create them if we don't
-    # have them already, because this is going to end up as a DB call, as
-    # something expensive. But wait! A *DB query* is expensive - but we don't
-    # NEED to do that right now! We can just have identifier.py return the
-    # appropriate _classes_ and wait until confirmation to instantiate them and
-    # do the DB queries! Fuck yeah first-class functions! :D
+    # have them already: DB queries are expensive.
     if (not current_deck.game_name) and (request.session.get('game_guess', None) != "Unknown Game"):
         # Oy. "If the current deck has no name and if our guess for the game is
         # something other than 'Unknown Game', enter this branch." I feel like
@@ -112,7 +107,6 @@ def check_answer(request):
     # Look at the answer from POST, compare it to the correct answer in the
     # session object, add an appropriate flash message to the session, redirect
     # to the ask-me-a-question page.
-
     current_given_answer = request.POST.get('answer', None)
     current_correct_answer = request.session.get('correct_answer', None)
     print "Given answer: {}. Correct answer: {}. Checking ...".format(current_given_answer, current_correct_answer)
@@ -127,7 +121,9 @@ def check_answer(request):
         request.session['last_given_answer'] = current_given_answer
         request.session['last_correct_answer'] = current_correct_answer
     except TypeError:
-        # Remember that this is where we'll end up with answers that are strings!
+        # Remember that this is where we'll end up with answers that are
+        # strings, until we fix the above try-block to tell apart different
+        # types of answer.
         request.session['last_given_answer'] = None
         request.session['last_correct_answer'] = None
         request.session['last_was_correct'] = None

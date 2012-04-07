@@ -1,15 +1,12 @@
-"""
-A module that holds code specific to Magic: the Gathering.
-
-It's entirely possible that some of this will in time be moved into Models - I
-mean, we're definitely going to persist cards, and we probably want to persist
-decks so that we have that to offer to premium subscribers.
+""" A module that holds code specific to the CCG Magic: the Gathering. Decks
+    uploaded by users. This and Pokemon are the pilot program, so they're going
+    to be getting the most attention.
 """
 
 from vexingarcanix.lib.abstracts import Deck, Card, Question
 
 class MTGDeck(Deck):
-    def __init__(self, decklist, **kwargs):
+    def __init__(self, decklist, **hints):
         self.decklist = decklist
         self.short_game_name = "magicthegathering"
         self.max_copies = 4

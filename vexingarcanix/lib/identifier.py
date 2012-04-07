@@ -36,11 +36,11 @@ def register_game(game):
     return game
 
 def find_game(cards):
-    """Takes a list of cards and tries to figure out which game they could be a
-    deck for, then returns the appropriate Deck, Card, and Question classes so
-    that the caller can instantiate them later. """
-    # FUTURE: These will be database calls, not just matching a list. However,
-    # for now - list! Get it working first. Still in MVP mode.
+    """ Takes a list of cards and tries to figure out which game they could be a
+        deck for, then returns the appropriate Deck, Card, and Question classes so
+        that the caller can instantiate them later.
+    """
+    # FUTURE: Query database for the cards to fingerprint a game.
     is_game = None
     if not registered_games:
         print "No games registered to check against."
@@ -57,7 +57,6 @@ def find_game(cards):
 
 @register_game
 def _is_pokemon_deck(cards):
-    """A rough check to see whether this is a Pokemon deck."""
     pokemon_unique = ['darkness energy', 'fighting energy', 'fire energy', 'grass energy', 'lightning energy', 'metal energy', 'psychic energy', 'water energy', 'arceus']
     for card in cards:
         if card.lower() in pokemon_unique:
@@ -67,7 +66,6 @@ def _is_pokemon_deck(cards):
 
 @register_game
 def _is_magic_deck(cards):
-    """A rough check to see whether this is a Magic deck."""
     magic_unique = ['plains', 'island', 'swamp', 'mountain', 'forest', 'snow-covered plains', 'snow-covered island', 'snow-covered swamp', 'snow-covered mountain', 'snow-covered forest', 'relentless rats']
     for card in cards:
         if card.lower() in magic_unique:

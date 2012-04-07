@@ -59,6 +59,10 @@ class PokemonQuestion(Question):
         super(PokemonQuestion, self).__init__()
         self.question_list = self.generic_questions
 
+    def basic_energy_in_opening(self, deck):
+        """ On average, how many basic Energy cards will be in your opening
+            hand?"""
+        raise NotImplementedError
 
     def this_basic_alone(self, deck):
         """ How likely is it that you'll get $basic as the only Pokemon in your

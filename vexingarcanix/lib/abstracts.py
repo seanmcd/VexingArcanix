@@ -78,26 +78,19 @@ class Card(object):
 
 
 class Question(object):
+    """ A class that generates questions when we don't know any of the
+        semantics of the game, and which indicates that the deck we're
+        currently working with is for a game we don't know. Individual games
+        subclass Question so they can grind out questions specific to that
+        game. The superclass also holds the methods that let a Question
+        instance introspect on itself and generate a question for the user to
+        answer. Ideally we'd use a registery/decorator for this so that there's
+        a list that automatically gets populated with questions, but
+        implementing that would be very time-consuming - so we're doing it the
+        dumb way for now.
     """
-    A class that takes a deck and generates a question based on its contents.
-    Is this the best way to represent questions? Maybe each game has an array
-    of Question objects and we just choose randomly from that list? The
-    commonality among questions suggests a class - all of the questions are
-    going to need to examine the deck's contents, then return the text of a
-    question, a right answer, some wrong answers, a shuffled array containing
-    both, and some formatting information. Hmm. Tentatively, yes, we should use
-    a class for that.
 
-    Individual games get Question subclasses so they can grind out classes
-    specific to that game.
-
-    Currently we are modeling invidual questions as methods of a Question
-    object. Um. That sounds vaguely wrong. :( But let's just press on for now
-    and get the MVP working.
-    """
     def __init__(self):
-        """So far the only hard prerequisite for generating a question is, we
-        need a deck. No deck, no question."""
         self.generic_questions = [
             'copies_in_full_deck',
             'copies_in_opening_hand',
@@ -107,23 +100,6 @@ class Question(object):
         self.question_list = [] + self.generic_questions
 
     def choose_question(self):
-        """How do we get this to work? I guess that we can use the
-        generic_questions dict as a source of possibilities: each key is the name
-        of a method, we choose one at random, invoking it yields a question
-        string, a correct answer, and a list of
-        answers that the user may choose from? Sure, good enough for now. """
-        # Return the method that is the question, then we'll just pass the
-        # whole deck object to the question and let helper methods do the work
-        # of extracting the information that the specific question needs.  Note
-        # that most questions start with choosing a random card, but we're not
-        # moving that into this function because we anticipate subclasses that
-        # want to know about more than one card! So this call stays the way it is.
-
-        # No, on second thought, this should do what the name says: choose a
-        # _question._ Caller then has to invoke the question - it doesn't get
-        # constructed as it's chosen. This should be possible to change later,
-        # and makes the flow of the program clearer to me, that's why I'm doing
-        # it.
         question = random.choice(self.question_list)
         return getattr(self, question)
 
@@ -141,7 +117,6 @@ class Question(object):
         # Possibly it should be:
         # correct, possible = self.gen_wrong(chosen_card.count, 'int')
         # ... but we're still in MVP mode.
-        print question_string.format(card=chosen_card.name), correct, possible, answer_suffix, chosen_card
         return question_string.format(card=chosen_card.name), correct, possible, answer_suffix, chosen_card
 
     def copies_in_opening_hand(self, deck):
@@ -166,17 +141,19 @@ class Question(object):
         return question_string.format(card=chosen_card.name), correct, possible, answer_suffix, chosen_card
 
     def average_draws_until_copy(self, deck):
-        """Our new flagbearer hard question."""
+        """ Our new flagbearer hard question.
+        """
         question_string = "If your opening hand contains zero copies of {card}, how many cards do you have to draw in order to have at least a 90 percent chance that a copy of {card} is among them?"
         chosen_card = random.choice(deck.decklist)
         answer_suffix = 'cards'
         raise NotImplementedError
 
     def copies_in_top_five(self, deck):
-        """Another difficult question - but also somewhat difficult to code,
-        since it requires that we pick a bunch of cards that have already left
-        the deck. Well, it would require that for the serious version. For this
-        version - just use a scalar!"""
+        """ Another difficult question - but also somewhat difficult to code,
+            since it requires that we pick a bunch of cards that have already
+            left the deck. Well, it would require that for the serious
+            version. For this version - just use a scalar!
+        """
         question_string = "After drawing your opening hand with one copy of {card}, how likely is it that another copy of {card} is in the top five cards of your deck?"
         # That's another reason why we don't choose a card earlier: we might be
         # interested in a card with a specific quality.
@@ -188,11 +165,12 @@ class Question(object):
         raise NotImplementedError
 
     def gen_wrong(self, correct, flavor, **kwargs):
-        """For example, 'how many copies of this card are left in your deck?'
-        needs to give different wrong answers than 'what are the odds that this
-        card is in the top 2 cards of your deck?', and neither is quite the
-        same as 'how likely is it that two copies of this card start the game
-        as Prizes?'"""
+        """ For example, 'how many copies of this card are left in your deck?'
+            needs to give different wrong answers than 'what are the odds that
+            this card is in the top 2 cards of your deck?', and neither is
+            quite the same as 'how likely is it that two copies of this card
+            start the game as Prizes?'
+        """
         if flavor is 'int':
             pass
         if flavor is 'float':
@@ -202,10 +180,10 @@ class Question(object):
         raise NotImplementedError
 
     def _gen_wrong_float(self, correct, variance=2.0):
-        """
-        Expects floats `correct` and `variance`. Returns a float, rounded to
-        two digits, that is guaranteed to not be equal to `correct`, and whose
-        magnitude will be between 0.00 and `variance` times `correct`.
+        """ Expects floats `correct` and `variance`. Returns a float, rounded
+            to two digits, that is guaranteed to not be equal to `correct`, and
+            whose magnitude will be between 0.00 and `variance` times
+            `correct`.
         """
         wrong = round(random.uniform(0, round(correct*variance, 4)), 4)
         while wrong > 1:
