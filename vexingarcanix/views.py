@@ -6,14 +6,14 @@ from .models import (
     MyModel,
     )
 
-from vexingarcanix.lib import abstracts, identifier, questions
-
+from vexingarcanix.lib import abstracts, identifier
 import random
 
 @view_config(route_name='give_deck', renderer='frontpage.mako')
 def deck_ingest(request):
-    # one = DBSession.query(MyModel).filter(MyModel.name=='one').first()
     # Send the user a page that asks them for a deck, start up a session for them.
+    for key in ['current_deck_object', 'last_given_answer', 'game_confirmed']:
+        request.session[key] = None
     return {"foo": "bar"}
 
 @view_config(route_name='check_deck', renderer='confirm_deck.mako')
@@ -22,15 +22,24 @@ def parse_deck(request):
     raw_card_list = request.POST.get('deck_list_area')
     identified_cards, unknown_cards = identifier.find_cards(raw_card_list)
 
+    DeckClass, CardClass, QuestionClass = identifier.find_game([card[1] for card in identified_cards])
+    if DeckClass.game_name:
+        request.session['game_guess'] = getattr(DeckClass, 'game_name')
+        print "Our guess: a {} deck".format(getattr(DeckClass, 'game_name'))
+    else:
+        request.session['game_guess'] = "Unknown Game"
+    request.session['game_classes'] = { 'deck'     : DeckClass,
+                                        'card'     : CardClass,
+                                        'question' : QuestionClass,
+                                        }
+
     card_object_list = [ abstracts.Card(card[1], card[0]) for card in identified_cards ]
     deck_object = abstracts.Deck(card_object_list)
     request.session['current_deck_object'] = deck_object
 
-    game_guess = identifier.find_game([card[1] for card in identified_cards])
-
     # change 'parsed_data' on below line and in .mako to better name
     return {'deck': deck_object,
-            'game_guess': game_guess,
+            'game_guess': request.session['game_guess'],
             'unknown_cards': unknown_cards,
             }
 
@@ -38,21 +47,57 @@ def parse_deck(request):
 def generate_question(request):
     # Generate a question and answer, display the question, store the answer to
     # the current question in the session object.
-    deck_object = request.session.get('current_deck_object', None)
-    if not deck_object:
+    current_deck = request.session.get('current_deck_object', None)
+    if not current_deck:
         return HTTPFound('/')
 
+    # Create Cards, a Deck, and a Question for the appropriate game if this is
+    # the first question after deck confirmation. Only create them if we don't
+    # have them already, because this is going to end up as a DB call, as
+    # something expensive. But wait! A *DB query* is expensive - but we don't
+    # NEED to do that right now! We can just have identifier.py return the
+    # appropriate _classes_ and wait until confirmation to instantiate them and
+    # do the DB queries! Fuck yeah first-class functions! :D
+    if (not current_deck.game_name) and (request.session.get('game_guess', None) != "Unknown Game"):
+        # Oy. "If the current deck has no name and if our guess for the game is
+        # something other than 'Unknown Game', enter this branch." I feel like
+        # this could be better.
+        try:
+            # If we're missing any of these, something is wrong.
+            DeckClass = request.session['game_classes']['deck']
+            CardClass = request.session['game_classes']['card']
+            QuestionClass = request.session['game_classes']['question']
+        except KeyError:
+            requestion.session['error_flash'] = "Something broke while trying to get our game-specific classes!"
+            return HTTPFound('/')
+        new_decklist = []
+        print "Constructing a {} deck ...".format(DeckClass.game_name)
+        for card in current_deck.decklist:
+            new_decklist.append(CardClass(card.name, card.count))
+        new_deck = DeckClass(new_decklist)
+        current_deck = request.session['current_deck_object'] = new_deck
+
+    # Set up a Question instance.
+    if not request.session.get('question_generator', None):
+        if not current_deck.game_name:
+            question_generator = abstracts.Question()
+        else:
+            question_generator = QuestionClass()
+        request.session['question_generator'] = question_generator
+
+    # Record information about the last question.
     last_given_answer = request.session.get('last_given_answer', None)
     last_correct_answer = request.session.get('last_correct_answer', None)
     last_was_correct = request.session.get('last_was_correct', None)
 
-    question_generator = abstracts.Question()
-    current_question = question_generator.choose_question()
-    question_string, correct, possible_answers, answer_suffix, chosen_card = current_question(deck_object)
-
+    # Generate a new question.
+    current_question = request.session['question_generator'].choose_question()
+    question_string, correct, possible_answers, answer_suffix, chosen_card = current_question(current_deck)
     request.session['correct_answer'] = correct
-    print "correct answer: {}".format(correct)
+    print "Correct answer: {}".format(correct)
+    print "Other answers: {}".format(possible_answers)
 
+    # Bundle it up and ship it out.
     return {'question': question_string,
             'possible_answers': possible_answers,
             'answer_suffix': answer_suffix,

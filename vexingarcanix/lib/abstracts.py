@@ -1,9 +1,9 @@
-"""
-This module holds abstract classes that game-specific classes will inherit
-from: Deck, Card, and Question. These objects are not, strictly speaking,
-abstract, because you can instantiate them and they'll function, but they're
-what our game-specific classes inherit from so that they can ask questions that
-are about a specific game, not just about a list of generic cards.
+""" This module holds abstract classes that game-specific classes will inherit
+    from: Deck, Card, and Question. These objects are not, strictly speaking,
+    abstract, because you can instantiate them and they'll function, but
+    they're what our game-specific classes inherit from so that they can ask
+    questions that are about a specific game, not just about a list of generic
+    cards.
 """
 
 import random, re
@@ -12,31 +12,32 @@ from scipy.stats import hypergeom
 
 
 class Deck(object):
-    """A Deck object represents the set of cards that the application is
-    currently thinking about. Feed Deck objects to instances of Question to
-    give the Question instance the information it needs to generate a question
-    about that deck. """
-    def __init__(self, decklist):
-        """
-        Need to pass a list of Card objects in. The deck should also know what
-        game it's for. That information belongs with the deck since a deck will
-        be made up of cards from just one game.
+    """ A Deck object represents the set of cards that the application is
+        currently thinking about. Feed Deck objects to instances of Question to
+        give the Question instance the information it needs to generate a question
+        about that deck.
+    """
 
-        Also, a deck for a given game should be able to tell you whether it's a
-        legal deck for a given format in that game - however, this is for
-        subclasses to implement.
+    def __init__(self, decklist):
+        """ Need to pass a list of Card objects in. The deck should also know
+            what game it's for. That information belongs with the deck since a
+            deck will be made up of cards from just one game.
+
+            Also, a deck for a given game should be able to tell you whether
+            it's a legal deck for a given format in that game - however, this
+            is for subclasses to implement.
         """
         self.decklist = decklist
         # Since Card implements __str__(), `print self.decklist` is a
         # good-enough string representation of the deck.  Note that decks
         # should assert that count > 0 for all cards in the full deck. What
         # kind of validation do we want to do?
-        self.game_name = None
-        self.game_name_pretty = None
+        self.short_game_name = None
         self.game_max_copies = 0
         self.game_max_copies_exempt = []
 
-    @property
+    game_name = None
+
     def size(self):
         # How many cards are in the deck? (usually 60)
         return sum([ card.count for card in self.decklist ])
@@ -103,6 +104,7 @@ class Question(object):
             # 'copies_in_top_five',
             # 'draws_until_copy',
             ]
+        self.question_list = [] + self.generic_questions
 
     def choose_question(self):
         """How do we get this to work? I guess that we can use the
@@ -122,7 +124,7 @@ class Question(object):
         # constructed as it's chosen. This should be possible to change later,
         # and makes the flow of the program clearer to me, that's why I'm doing
         # it.
-        question = random.choice(self.generic_questions)
+        question = random.choice(self.question_list)
         return getattr(self, question)
 
     def copies_in_full_deck(self, deck):
