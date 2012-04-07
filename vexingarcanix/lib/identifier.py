@@ -39,6 +39,8 @@ def find_game(cards):
     # FUTURE: These will be database calls, not just matching a list. However,
     # for now - list! Get it working first. Still in MVP mode.
     is_game = None
+    if not registered_games:
+        print "No games registered to check against."
     for game in registered_games:
         is_game = game(cards)
         if is_game:
@@ -46,30 +48,30 @@ def find_game(cards):
             return is_game
     if not is_game:
         # We'll work out later what to do if we don't know what game it is.
-        return None
+        return "Unknown Game"
 
 @register_game
 def _is_pokemon_deck(cards):
     """A rough check to see whether this is a Pokemon deck."""
-    pokemon_unique = ['Darkness Energy','Fighting Energy','Fire Energy','Grass Energy','Lightning Energy','Metal Energy','Psychic Energy', 'Water Energy', 'Arceus']
+    pokemon_unique = ['darkness energy', 'fighting energy', 'fire energy', 'grass energy', 'lightning energy', 'metal energy', 'psychic energy', 'water energy', 'arceus']
     for card in cards:
-        if card in pokemon_unique:
+        if card.lower() in pokemon_unique:
             return "pokemon"
     return False
 
 @register_game
 def _is_magic_deck(cards):
     """A rough check to see whether this is a Magic deck."""
-    magic_unique = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Snow-covered Plains', 'Snow-covered Island', 'Snow-covered Swamp', 'Snow-covered Mountain', 'Snow-covered Forest', 'Relentless Rats']
+    magic_unique = ['plains', 'island', 'swamp', 'mountain', 'forest', 'snow-covered plains', 'snow-covered island', 'snow-covered swamp', 'snow-covered mountain', 'snow-covered forest', 'relentless rats']
     for card in cards:
-        if card in magic_unique:
+        if card.lower() in magic_unique:
             return "magicthegathering"
     return False
 
 @register_game
 def _is_l5r_deck(cards):
-    l5r_unique = ['Gifts and Favors', 'A Favor Returned', 'Copper Mine', 'Iron Mine', 'Gold Mine', 'Obsidian Mine', 'Kobune Port', 'Geisha House', 'Marketplace', 'Silver Mine', 'Silk Works', 'Stables', 'Treasure Hoard']
+    l5r_unique = ['gifts and favors', 'a favor returned', 'copper mine', 'iron mine', 'gold mine', 'obsidian mine', 'kobune port', 'geisha house', 'marketplace', 'silver mine', 'silk works', 'stables', 'treasure hoard']
     for card in cards:
-        if card in l5r_unique:
+        if card.lower() in l5r_unique:
             return "l5r"
     return False
