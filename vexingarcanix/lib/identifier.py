@@ -13,10 +13,13 @@ def find_cards(text_blob):
     """
 
     regex = r'^\s*([0-9]+)[\sx]+?[\'"]?([\w][\w\s\-\']+[\w])[\'"$]?'
-    # Note that this assumes that we split the input on newlines.
-    # This should give us the card name in \2, and the number of copies in \1.
-    # Regex note: watch out for pluralizing cards whose name is singular -
-    # e.g. 'Mountains' for 'Mountain'. Is there a reasonable way to solve that?
+    # Note that this assumes that we split the input on newlines.  This should
+    # give us the card name in \2, and the number of copies in \1.  Regex note:
+    # watch out for pluralizing cards whose name is singular - e.g. 'Mountains'
+    # for 'Mountain'. Is there a reasonable way to solve that? How expensive is
+    # it to just try again if a name ends in 's' and didn't match anything the
+    # first time? It's probably worth doing _eventually,_ because we want good
+    # UX, we want to be user-compassionate.
 
     found_cards = []
     unknown_cards = []
@@ -53,8 +56,8 @@ def find_game(cards):
             Deck, Card, Question = is_game
             return Deck, Card, Question
     if not is_game:
-        from vexingarcanix.lib import abstracts
-        Deck, Card, Question = abstracts.Deck, abstracts.Card, abstracts.Question
+        from vexingarcanix.games import base
+        Deck, Card, Question = base.Deck, base.Card, base.Question
         return Deck, Card, Question
 
 @register_game
@@ -62,7 +65,7 @@ def _is_pokemon_deck(cards):
     pokemon_unique = ['darkness energy', 'fighting energy', 'fire energy', 'grass energy', 'lightning energy', 'metal energy', 'psychic energy', 'water energy', 'arceus']
     for card in cards:
         if card.lower() in pokemon_unique:
-            from vexingarcanix.lib import pokemon as pk
+            from vexingarcanix.games import pokemon as pk
             return pk.PokemonDeck, pk.PokemonCard, pk.PokemonQuestion
     return False
 
@@ -71,7 +74,7 @@ def _is_magic_deck(cards):
     magic_unique = ['plains', 'island', 'swamp', 'mountain', 'forest', 'snow-covered plains', 'snow-covered island', 'snow-covered swamp', 'snow-covered mountain', 'snow-covered forest', 'relentless rats']
     for card in cards:
         if card.lower() in magic_unique:
-            from vexingarcanix.lib import magicthegathering as mtg
+            from vexingarcanix.games import magicthegathering as mtg
             return mtg.MTGDeck, mtg.MTGCard, mtg.MTGQuestion
     return False
 
@@ -80,6 +83,6 @@ def _is_l5r_deck(cards):
     l5r_unique = ['gifts and favors', 'a favor returned', 'copper mine', 'iron mine', 'gold mine', 'obsidian mine', 'kobune port', 'geisha house', 'marketplace', 'silver mine', 'silk works', 'stables', 'treasure hoard']
     for card in cards:
         if card.lower() in l5r_unique:
-            from vexingarcanix.lib import l5r
+            from vexingarcanix.games import l5r
             return l5r.L5RDeck, l5r.L5RCard, l5r.L5RQuestion
     return False

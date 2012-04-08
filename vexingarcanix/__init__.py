@@ -2,28 +2,23 @@
 from pyramid.session import UnencryptedCookieSessionFactoryConfig
 my_session_factory = UnencryptedCookieSessionFactoryConfig('not-really-secret')
 
-"""
-The docs have a charming parallel to the way apt-get remove perl used to make
-you type out 'I know that what I am doing is wrong':
+""" The docs have a charming parallel to the way `apt-get remove perl` used to
+    make you type out 'I know that what I am doing is wrong':
 
-    'Note the very long, very explicit name for
-    UnencryptedCookieSessionFactoryConfig. It's trying to tell you that this
-    implementation is, by default, *unencrypted*. You should not use it when
-    you keep sensitive information in the session object, as the information
-    can be easily read by both users of your application and third parties who
-    have access to your users' network traffic. Use a different session factory
-    implementation (preferably one which keeps session data on the server) for
-    anything but the most basic of applications where "session security doesn't
-    matter".'
+    > Note the very long, very explicit name for
+    > UnencryptedCookieSessionFactoryConfig. It's trying to tell you that this
+    > implementation is, by default, *unencrypted*. You should not use it when
+    > you keep sensitive information in the session object, as the information
+    > can be easily read by both users of your application and third parties
+    > who have access to your users' network traffic. Use a different session
+    > factory implementation (preferably one which keeps session data on the
+    > server) for anything but the most basic of applications where "session
+    > security doesn't matter".
 """
 
 from pyramid.config import Configurator
-config = Configurator(session_factory = my_session_factory)
-
 from sqlalchemy import engine_from_config
-
 from .models import DBSession
-
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.

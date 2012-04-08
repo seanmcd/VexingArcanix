@@ -3,7 +3,7 @@
     to be getting the most attention.
 """
 
-from vexingarcanix.lib.abstracts import Deck, Card, Question
+from vexingarcanix.games.base import Deck, Card, Question
 
 class MTGDeck(Deck):
     def __init__(self, decklist, **hints):

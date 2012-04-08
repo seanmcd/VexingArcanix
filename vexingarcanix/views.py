@@ -6,7 +6,8 @@ from .models import (
     MyModel,
     )
 
-from vexingarcanix.lib import abstracts, identifier
+from vexingarcanix.lib import identifier
+from vexingarcanix.games import base
 import random
 
 @view_config(route_name='give_deck', renderer='frontpage.mako')
@@ -16,7 +17,7 @@ def deck_ingest(request):
         request.session[key] = None
     return {"foo": "bar"}
 
-@view_config(route_name='check_deck', renderer='confirm_deck.mako')
+@view_config(route_name='check_deck', renderer='confirm_deck.mako', request_method='POST')
 def parse_deck(request):
     # FUTURE: Reject the input if it's > 5KB of text.
     raw_card_list = request.POST.get('deck_list_area')
@@ -25,7 +26,7 @@ def parse_deck(request):
     DeckClass, CardClass, QuestionClass = identifier.find_game([card[1] for card in identified_cards])
     if DeckClass.game_name:
         request.session['game_guess'] = getattr(DeckClass, 'game_name')
-        print "Our guess: a {} deck".format(getattr(DeckClass, 'game_name'))
+        print u"Our guess: a {} deck".format(getattr(DeckClass, 'game_name'))
     else:
         request.session['game_guess'] = "Unknown Game"
     request.session['game_classes'] = { 'deck'     : DeckClass,
@@ -33,8 +34,8 @@ def parse_deck(request):
                                         'question' : QuestionClass,
                                         }
 
-    card_object_list = [ abstracts.Card(card[1], card[0]) for card in identified_cards ]
-    deck_object = abstracts.Deck(card_object_list)
+    card_object_list = [ base.Card(card[1], card[0]) for card in identified_cards ]
+    deck_object = base.Deck(card_object_list)
     request.session['current_deck_object'] = deck_object
 
     return {'deck': deck_object,
@@ -75,7 +76,7 @@ def generate_question(request):
     # Set up a Question instance.
     if not request.session.get('question_generator', None):
         if not current_deck.game_name:
-            question_generator = abstracts.Question()
+            question_generator = base.Question()
         else:
             question_generator = QuestionClass()
         request.session['question_generator'] = question_generator

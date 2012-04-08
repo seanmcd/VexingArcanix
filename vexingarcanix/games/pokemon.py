@@ -1,8 +1,12 @@
-""" A module that holds code specific to the Pokemon CCG.
+""" A module that holds code specific to the Pokemon CCG. Variable decks,
+    user-entered, lots of special cases with funky names. Annoying
+    canonicalization issues - there's a card whose canonical name is a single
+    letter (N), and cards whose canonical name starts with a lower case delta
+    (i.e. backslash-u 03b4).
 """
 
 import re
-from vexingarcanix.lib.abstracts import Deck, Card, Question
+from vexingarcanix.games.base import Deck, Card, Question
 
 class PokemonDeck(Deck):
     def __init__(self, decklist, **kwargs):

@@ -5,7 +5,7 @@
     with that.
 """
 
-from vexingarcanix.lib.abstracts import Deck, Card, Question
+from vexingarcanix.games.base import Deck, Card, Question
 
 class L5RDeck(Deck):
     """deck"""
