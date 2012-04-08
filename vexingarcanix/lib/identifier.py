@@ -12,7 +12,7 @@ def find_cards(text_blob):
         turn 'Jace TMS' into "Jace, the Mind Sculptor").
     """
 
-    regex = r'^([0-9]+)[\sx]+?[\'"]?([\w][\w\s\-\']+[\w])[\'"$]?'
+    regex = r'^\s*([0-9]+)[\sx]+?[\'"]?([\w][\w\s\-\']+[\w])[\'"$]?'
     # Note that this assumes that we split the input on newlines.
     # This should give us the card name in \2, and the number of copies in \1.
     # Regex note: watch out for pluralizing cards whose name is singular -
@@ -21,11 +21,13 @@ def find_cards(text_blob):
     found_cards = []
     unknown_cards = []
     for s in text_blob.splitlines():
+        # TODO: deal with blank lines and duplicates
         r = re.search(regex, s)
         if r:
             found_cards.append(r.groups())
             print "Found card: {}".format(r.groups())
         else:
+            print "Couldn't identify: {}".format(s)
             unknown_cards.append(s)
     return found_cards, unknown_cards
 
