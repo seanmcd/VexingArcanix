@@ -6,83 +6,126 @@ from .models import (
     MyModel,
     )
 
-from vexingarcanix.lib import abstracts, identifier, questions
-
+from vexingarcanix.lib import abstracts, identifier
 import random
 
 @view_config(route_name='give_deck', renderer='frontpage.mako')
 def deck_ingest(request):
-    # one = DBSession.query(MyModel).filter(MyModel.name=='one').first()
     # Send the user a page that asks them for a deck, start up a session for them.
+    for key in ['current_deck_object', 'last_given_answer', 'game_confirmed']:
+        request.session[key] = None
     return {"foo": "bar"}
 
 @view_config(route_name='check_deck', renderer='confirm_deck.mako')
 def parse_deck(request):
-    # Take a form that the user POSTs to us, turn it into a string, parse that
-    # string into a dict that represents their deck.
-    # FUTURE: Reject the deck if it's > 5KB of text.
+    # FUTURE: Reject the input if it's > 5KB of text.
     raw_card_list = request.POST.get('deck_list_area')
-    card_list = identifier.find_cards(raw_card_list)
-    game_guess = identifier.find_game(card_list)
-    request.session['current_deck'] = card_list
+    identified_cards, unknown_cards = identifier.find_cards(raw_card_list)
 
-    card_object_list = [ abstracts.Card(card[1], card[0]) for card in card_list ]
+    DeckClass, CardClass, QuestionClass = identifier.find_game([card[1] for card in identified_cards])
+    if DeckClass.game_name:
+        request.session['game_guess'] = getattr(DeckClass, 'game_name')
+        print "Our guess: a {} deck".format(getattr(DeckClass, 'game_name'))
+    else:
+        request.session['game_guess'] = "Unknown Game"
+    request.session['game_classes'] = { 'deck'     : DeckClass,
+                                        'card'     : CardClass,
+                                        'question' : QuestionClass,
+                                        }
+
+    card_object_list = [ abstracts.Card(card[1], card[0]) for card in identified_cards ]
     deck_object = abstracts.Deck(card_object_list)
     request.session['current_deck_object'] = deck_object
 
-    # change 'parsed_data' on below line and in .mako to better name
-    return {'form_data': raw_card_list, 'parsed_data': card_list, }
+    return {'deck': deck_object,
+            'game_guess': request.session['game_guess'],
+            'unknown_cards': unknown_cards,
+            }
 
 @view_config(route_name='show_question', renderer='questions.mako')
 def generate_question(request):
     # Generate a question and answer, display the question, store the answer to
     # the current question in the session object.
-    this_answer = request.session.get('given_answer', None)
-    last_was_correct = request.session.get('correctness', None)
-    current_deck_object = request.session.get('current_deck_object', None)
-    if current_deck_object:
-        new_question = abstracts.Question(current_deck_object)
-        current_question = new_question.choose_question(new_question.deck)
-        question_string, correct, possible_answers, answer_suffix, chosen_card = current_question(new_question.deck)
-        request.session['correct_answer'] = correct
-        print "correct answer: {}".format(correct)
-        return {'question': question_string,
-                'card': chosen_card,
-                'correctness': last_was_correct,
-                'given_answer': this_answer, #request.session.get('given_answer', None),
-                'answer_set': possible_answers,
-                'last_answer': request.session.get('answer_to_last_question', None),
-                'answer_suffix': answer_suffix,
-                }
-    # try:
-    #     this_card, this_question, this_answer_set = mvp.generate_question(request.session['current_deck'])
-    #     request.session['correct_answer'] = this_answer_set.get('correct', None)
-    #     this_answer_set['last_answer'] = request.session.get('answer_to_last_question', None)
-    #     print "correct answer: {}".format(this_answer_set['correct'])
-    #     return {'question': this_question,
-    #             'card': this_card,
-    #             'correctness': last_was_correct,
-    #             'given_answer': this_answer,
-    #             'answer_set': this_answer_set,}
-    # except KeyError as e:
-    #     print "error: {}".format(e)
-    #     return HTTPFound('/')
+    current_deck = request.session.get('current_deck_object', None)
+    if not current_deck:
+        return HTTPFound('/')
 
-@view_config(route_name='check_answer', renderer='questions.mako', request_method='POST')
+    # Create Cards, a Deck, and a Question for the appropriate game if this is
+    # the first question after deck confirmation. Only create them if we don't
+    # have them already: DB queries are expensive.
+    if (not current_deck.game_name) and (request.session.get('game_guess', None) != "Unknown Game"):
+        # Oy. "If the current deck has no name and if our guess for the game is
+        # something other than 'Unknown Game', enter this branch." I feel like
+        # this could be better.
+        try:
+            # If we're missing any of these, something is wrong.
+            DeckClass = request.session['game_classes']['deck']
+            CardClass = request.session['game_classes']['card']
+            QuestionClass = request.session['game_classes']['question']
+        except KeyError:
+            requestion.session['error_flash'] = "Something broke while trying to get our game-specific classes!"
+            return HTTPFound('/')
+        new_decklist = []
+        print "Constructing a {} deck ...".format(DeckClass.game_name)
+        for card in current_deck.decklist:
+            new_decklist.append(CardClass(card.name, card.count))
+        new_deck = DeckClass(new_decklist)
+        current_deck = request.session['current_deck_object'] = new_deck
+
+    # Set up a Question instance.
+    if not request.session.get('question_generator', None):
+        if not current_deck.game_name:
+            question_generator = abstracts.Question()
+        else:
+            question_generator = QuestionClass()
+        request.session['question_generator'] = question_generator
+
+    # Record information about the last question.
+    last_given_answer = request.session.get('last_given_answer', None)
+    last_correct_answer = request.session.get('last_correct_answer', None)
+    last_was_correct = request.session.get('last_was_correct', None)
+
+    # Generate a new question.
+    current_question = request.session['question_generator'].choose_question()
+    question_string, correct, possible_answers, answer_suffix, chosen_card = current_question(current_deck)
+    request.session['correct_answer'] = correct
+    print "Correct answer: {}".format(correct)
+    print "Other answers: {}".format(possible_answers)
+
+    # Bundle it up and ship it out.
+    return {'question': question_string,
+            'possible_answers': possible_answers,
+            'answer_suffix': answer_suffix,
+            'card': chosen_card,
+            'last_given_answer': last_given_answer,
+            'last_correct_answer': last_correct_answer,
+            'last_was_correct': last_was_correct,
+            }
+
+@view_config(route_name='check_answer', request_method='POST')
 def check_answer(request):
     # Look at the answer from POST, compare it to the correct answer in the
     # session object, add an appropriate flash message to the session, redirect
     # to the ask-me-a-question page.
-    request.session['given_answer'] = request.POST.get('answer')
-    print "Given answer: {}. Correct answer: {}. Checking ...".format(request.session['given_answer'], request.session['correct_answer'])
+    current_given_answer = request.POST.get('answer', None)
+    current_correct_answer = request.session.get('correct_answer', None)
+    print "Given answer: {}. Correct answer: {}. Checking ...".format(current_given_answer, current_correct_answer)
+
     try:
-        request.session['answer_to_last_question'] = request.session['correct_answer']
-        if float(request.session['given_answer']) == float(request.session['correct_answer']):
-            request.session['correctness'] = True
+        # TODO: Sense whether the answer is a float, int, or string, and
+        # respond appropriately.
+        if float(current_given_answer) == float(current_correct_answer):
+            request.session['last_was_correct'] = True
         else:
-            request.session['correctness'] = None
-        return HTTPFound('/ask')
+            request.session['last_was_correct'] = False
+        request.session['last_given_answer'] = current_given_answer
+        request.session['last_correct_answer'] = current_correct_answer
     except TypeError:
-        request.session['correctness'] = None
-        request.session['answer_to_last_question'] = None
-        return HTTPFound('/ask')
+        # Remember that this is where we'll end up with answers that are
+        # strings, until we fix the above try-block to tell apart different
+        # types of answer.
+        request.session['last_given_answer'] = None
+        request.session['last_correct_answer'] = None
+        request.session['last_was_correct'] = None
+
+    return HTTPFound('/ask')

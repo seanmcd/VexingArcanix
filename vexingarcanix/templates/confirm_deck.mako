@@ -5,23 +5,23 @@
 </%block>
 
 <%def name="confirm_deck()">
-    <p>Here's the data we got from the form: <br>
-        <blockquote>
-        ${form_data}
-        </blockquote>
-##        <ul id="raw_cards_list">
-##            % for l in form_data:
-##            <li>${l}</li>
-##            % endfor
-##        </ul>
-    </p>
-    <hr>
-    <p>Here's the deck list we got from that: <br>
+    <p>We think that this is a ${game_guess} deck with the following cards: <br>
         <ul id="parsed_cards_list">
-            % for l in parsed_data:
-            <li>${l[0]} copies of ${l[1]}</li>
+            % for card in deck.decklist:
+            <li>${card.count} copies of ${card.name}</li>
             % endfor
         </ul>
+    % if unknown_cards:
+    <p class="unknown_cards">But we couldn't identify the following:
+        <ul id="unknown_cards_list">
+            % for card in unknown_cards:
+            <li>${card}</li>
+            % endfor
+        </ul>
+    </p>
+    % endif
+
+    <hr>
 
     <h2><a href='/'>Try again.</a></h2>
     <h2><a href='/ask' title="I am not afraid.">Ask me a question, bridgekeeper</a></h2>
