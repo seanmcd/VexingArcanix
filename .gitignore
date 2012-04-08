@@ -1,34 +1,54 @@
-# Some basic ignore patterns.
-\#*#
-\#.*
-*.tmp
+# Ignore the spoor that OSes and editors leave around.
 *.bkp
+*.tmp
+*.vi
+*~
+.#*
 .DS_Store*
 .Trashes*
+.cache
+.project
+.settings
 Icon?
 Thumbs.db
+\#*#
+\#.*
 
-# Copied from the Pyramid project's .gitignore - seems like a good place to start.
+# Copied from the Pyramid project's .gitignore, a good place to start.
+*$py.class
 *.egg
 *.egg-info
-*.pyc
-*$py.class
 *.pt.py
+*.pyc
 *.txt.py
-*~
 .coverage
+.idea/
 .tox/
-nosetests.xml
-pyramid/coverage.xml
-tutorial.db
+bin/
+bookenv/
 build/
 dist/
-bin/
-include/
-.idea/
 distribute-*.tar.gz
-bookenv/
-jyenv/
-pypyenv/
 env*/
-vexingarcanix/static/
+include/
+jyenv/
+nosetests.xml
+pypyenv/
+pyramid/coverage.xml
+tutorial.db
+
+# Copied from the HTML5Boilerplate folks' .gitignore file.
+*.diff
+*.err
+*.log
+*.orig
+*.rej
+*.sass-cache
+*.swo
+*.swp
+.CVS
+.hg
+.idea
+.svn
+intermediate
+publish
