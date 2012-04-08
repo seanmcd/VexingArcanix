@@ -9,14 +9,17 @@ from vexingarcanix.games.base import Deck, Card, Question
 
 class L5RDeck(Deck):
     """deck"""
-    def __init__(self, decklist):
-        self.decklist = decklist
-        self.short_game_name = "l5r"
-        self.max_copies = 3
-        self.opening_hand = 7
 
     game_name = u"Legend of the Five Rings"
+    short_game_name = "l5r"
+    max_copies = 3
+    opening_hand = 7
 
+    def __init__(self, decklist):
+        self.decklist = decklist
+
+    # Remember when we implement a validate_deck() method that we'll have to
+    # take Unique cards into account, and deal with the having-two-decks deal.
 
 class L5RCard(Card):
     """card"""

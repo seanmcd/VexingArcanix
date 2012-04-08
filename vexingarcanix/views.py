@@ -3,7 +3,6 @@ from pyramid.httpexceptions import HTTPFound
 
 from .models import (
     DBSession,
-    MyModel,
     )
 
 from vexingarcanix.lib import identifier
@@ -67,7 +66,7 @@ def generate_question(request):
             requestion.session['error_flash'] = "Something broke while trying to get our game-specific classes!"
             return HTTPFound('/')
         new_decklist = []
-        print "Constructing a {} deck ...".format(DeckClass.game_name)
+        print u"Constructing a {} deck ...".format(DeckClass.game_name)
         for card in current_deck.decklist:
             new_decklist.append(CardClass(card.name, card.count))
         new_deck = DeckClass(new_decklist)

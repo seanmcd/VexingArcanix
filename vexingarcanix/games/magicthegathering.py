@@ -6,23 +6,31 @@
 from vexingarcanix.games.base import Deck, Card, Question
 
 class MTGDeck(Deck):
-    def __init__(self, decklist, **hints):
-        self.decklist = decklist
-        self.short_game_name = "magicthegathering"
-        self.max_copies = 4
-        self.opening_hand = 7
-        self.max_copies_exempt = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Snow-covered Plains', 'Snow-covered Island', 'Snow-covered Swamp', 'Snow-covered Mountain', 'Snow-covered Forest', 'Relentless Rats']
+    """A Magic: the Gathering deck."""
 
     game_name = u"Magic: the Gathering"
+    short_game_name = "magicthegathering"
+    max_copies = 4
+    opening_hand = 7
+    max_copies_exempt = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Snow-covered Plains', 'Snow-covered Island', 'Snow-covered Swamp', 'Snow-covered Mountain', 'Snow-covered Forest', 'Relentless Rats']
 
-    def is_legal(self, format='standard'):
-        """Should only be mildly tricky."""
-        # Will Not: attempt to tell you if that's a legal 2-Headed Giant deck.
-        # Will: cheat on 'block' by just checking if all of the cards are from
-        # the same block. Legality: 'Unglued' is the fall-through - if we don't
-        # recognize all of the cards or if we affirmatively recognize some of
-        # them as being from the Un-sets, then the only thing it's legal for is
-        # Un-sets.
+    def __init__(self, decklist, **hints):
+        self.decklist = decklist
+
+    def is_legal(self, decklist, format='standard'):
+        """ A method that inspects the current deck and returns a list of
+            formats in which it's legal to play. Because this requires an
+            ongoing maintenance cost as new sets are released, this is
+            definitely a feature for version 2.0, not for the MVP.
+
+            This method *will not*: attempt to tell you if that's a legal
+            2-Headed Giant deck.  This method *will*: cheat on discerning
+            'block' legality by just checking if all of the cards are from the
+            same block. Legality: 'Unglued' is the fall-through - if we don't
+            recognize all of the cards or if we affirmatively recognize some of
+            them as being from the Un-sets, then the only thing it's legal for
+            is Un-sets.
+        """
         formats = ['standard', 'modern', 'legacy', 'vintage', 'extended', 'block', 'commander', 'unglued', ]
 
 

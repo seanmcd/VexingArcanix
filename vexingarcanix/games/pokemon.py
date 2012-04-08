@@ -10,7 +10,7 @@ from vexingarcanix.games.base import Deck, Card, Question
 
 class PokemonDeck(Deck):
     def __init__(self, decklist, **kwargs):
-        super().__init__(decklist)
+        super(PokemonDeck, self).__init__(decklist)
         self.short_game_name = "pokemon"
         self.max_copies = 4
         self.opening_hand = 7

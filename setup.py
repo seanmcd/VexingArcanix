@@ -14,6 +14,8 @@ requires = [
     'pyramid_debugtoolbar',
     'zope.sqlalchemy',
     'waitress',
+    'pyramid_beaker',
+    'scipy',
     ]
 
 setup(name='VexingArcanix',
