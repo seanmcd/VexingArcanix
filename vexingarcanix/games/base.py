@@ -1,14 +1,13 @@
-""" This module holds abstract classes that game-specific classes will inherit
-    from: Deck, Card, and Question. These objects are not, strictly speaking,
-    abstract, because you can instantiate them and they'll function, but
-    they're what our game-specific classes inherit from so that they can ask
-    questions that are about a specific game, not just about a list of generic
-    cards.
+""" This module holds base classes that game-specific classes will inherit
+    from: Deck, Card, and Question. These objects are 'base' instead of
+    'abstract' because you can instantiate them and they'll function as
+    representations of a generic game using decks of cards. Their main purpose
+    is to give our game-specific classes a starting point from which they build
+    game-specific data structures and questions.
 """
 
-import random, re
+import decimal, random, re
 from scipy.stats import hypergeom
-# import itertools, math, numpy
 
 
 class Deck(object):
@@ -94,7 +93,7 @@ class Question(object):
         self.generic_questions = [
             'copies_in_full_deck',
             'copies_in_opening_hand',
-            # 'copies_in_top_five',
+            'copies_in_top_five',
             # 'draws_until_copy',
             ]
         self.question_list = [] + self.generic_questions
@@ -133,11 +132,11 @@ class Question(object):
         # again? Thank goodness I gave the rest meaningful variable names.
         # http://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.hypergeom.html
 
-        wrongs = [ round(self.gen_wrong(x, 'float', variance=2.0), 2) for x in [1.2, 2.0, 6.0, 16.0] ]
+        wrongs = [ self.gen_wrong(correct, 'float', variance=x) for x in [1.2, 2.0, 6.0, 16.0] ]
         possible = wrongs + [opening_hand_chance]
         random.shuffle(possible)
 
-        print "Chance of a copy of {} in opening hand: {}".format(chosen_card.name, str(opening_hand_chance))
+        print "Chance of a copy of {} in opening hand: {}".format(chosen_card.name, str(correct))
         return question_string.format(card=chosen_card.name), correct, possible, answer_suffix, chosen_card
 
     def average_draws_until_copy(self, deck):
@@ -155,14 +154,21 @@ class Question(object):
             version. For this version - just use a scalar!
         """
         question_string = "After drawing your opening hand with one copy of {card}, how likely is it that another copy of {card} is in the top five cards of your deck?"
+        answer_suffix = 'percent'
         # That's another reason why we don't choose a card earlier: we might be
         # interested in a card with a specific quality.
-        chosen_card = random.choice([ card for cards in deck.decklist if card.count > 1 ])
+        chosen_card = random.choice([ card for card in deck.decklist if card.count > 1 ])
         remaining_copies = chosen_card.count - 1
         remaining_deck = sum([c.count for c in deck.decklist]) - 7
 
         in_top_five_cards_chance = hypergeom.sf(1, remaining_deck, remaining_copies, 5)
-        raise NotImplementedError
+        correct = in_top_five_cards_chance = round(in_top_five_cards_chance, 4) * 100
+        wrongs = [ self.gen_wrong(correct, 'float', variance=x) for x in [1.2, 2.0, 6.0, 16.0] ]
+        possible = wrongs + [in_top_five_cards_chance, ]
+        random.shuffle(possible)
+
+        print "Chance of a copy of {} in the next five cards: {}".format(chosen_card.name, str(correct))
+        return question_string.format(card=chosen_card.name), correct, possible, answer_suffix, chosen_card
 
     def gen_wrong(self, correct, flavor, **kwargs):
         """ For example, 'how many copies of this card are left in your deck?'
@@ -188,7 +194,13 @@ class Question(object):
         wrong = round(random.uniform(0, round(correct*variance, 4)), 4)
         while wrong > 1:
             wrong /= 10.0
-        wrong = wrong * 100
+        wrong = round(wrong * 100, 2)
         if wrong == round(correct, 2):
             wrong = self._gen_wrong_float(correct, variance)
-        return wrong
+        if wrong < 0.1:
+            wrong = self._gen_wrong_float(correct, variance)
+        if wrong > 4.0 * round(correct, 2):
+            wrong = self._gen_wrong_float(correct, variance)
+        if wrong < 0.2 * round(correct, 2):
+            wrong = self._gen_wrong_float(correct, variance)
+        return round(wrong, 2)
