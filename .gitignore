@@ -52,3 +52,6 @@ tutorial.db
 .svn
 intermediate
 publish
+
+# Ignore Beaker's session-data folder. 
+/data
