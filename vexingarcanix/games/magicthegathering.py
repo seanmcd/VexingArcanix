@@ -33,6 +33,21 @@ class MTGDeck(Deck):
         """
         formats = ['standard', 'modern', 'legacy', 'vintage', 'extended', 'block', 'commander', 'unglued', ]
 
+    def land_count(self):
+        """ Counts the number of lands in the deck. Even though this is
+            something fairly simple, we're likely to use it a lot, so let's
+            make it easy to invoke and put it in one place.
+        """
+        pass
+
+    def basic_land_count(self):
+        """ Counts the number of basic lands in the deck. Even though this is
+            something fairly simple, we're likely to use it a lot, so let's
+            make it easy to invoke and put it in one place.
+        """
+        basics = [ card for card in self.decklist if card.is_basic_land() ]
+        return sum([ land.count for land in basics ])
+
 
 class MTGCard(Card):
     """ Cards for Magic: the Gathering may have supertypes, types, subtypes,
@@ -48,9 +63,8 @@ class MTGCard(Card):
     def canonical_name(self):
         pass
 
-    @property
     def is_basic_land(self):
-        basics = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Snow-covered Plains', 'Snow-covered Island', 'Snow-covered Swamp', 'Snow-covered Mountain', 'Snow-covered Forest', 'Relentless Rats']
+        basics = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Snow-covered Plains', 'Snow-covered Island', 'Snow-covered Swamp', 'Snow-covered Mountain', 'Snow-covered Forest']
         if self.name in basics:
             return True
         else:
@@ -59,16 +73,20 @@ class MTGCard(Card):
     # Later we'll probably prune out things that can be answered just by
     # looking at the type line. For now we'll use these methods.
     def _is_land(self, name):
-        pass
+        raise NotImplementedError
 
     def _is_creature(self, name):
-        pass
+        raise NotImplementedError
 
     def _is_spell(self, name):
-        pass
+        raise NotImplementedError
 
     def _is_permanent(self, name):
-        pass
+        """ It's a permanent if its type is Creature, Land, Enchantment,
+            Planeswalker, or Artifact. We don't care about the oddball cases
+            like Vanguard, Plane, and Scheme.
+        """
+        raise NotImplementedError
 
 
 class MTGQuestion(Question):
@@ -76,3 +94,23 @@ class MTGQuestion(Question):
     def __init__(self):
         super(MTGQuestion, self).__init__()
         self.question_list = self.generic_questions
+        self.question_list += ['basics_count',
+                               #'basic_in_next_n',
+                               ]
+
+    def basics_count(self, deck):
+        question_string = "How many basic lands are in your deck?"
+        answer_suffix = "basic lands"
+        correct = count = deck.basic_land_count()
+        if count < 5:
+            possible = range(0, 5)
+        else:
+            possible = [ x for x in range(count - 2, count + 3)]
+        # Possibly it should be:
+        # correct, possible = self.gen_wrong(chosen_card.count, 'int')
+        # ... but we're still in MVP mode.
+        return question_string, correct, possible, answer_suffix, "basic lands"
+
+
+    def basic_in_next_n(self, deck, depth=None):
+        raise NotImplementedError
