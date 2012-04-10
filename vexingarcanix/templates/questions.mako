@@ -6,7 +6,7 @@
 </%block>
 
 <%def name="question_block()">
-    <p>We're going to ask a question about ${card.name}.</p>
+    <p>We're going to ask a question about ${card}.</p>
     <hr>
     <div style="width: 75%; margin: auto;">
         <p>${question}</p>

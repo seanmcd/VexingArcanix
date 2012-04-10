@@ -108,6 +108,7 @@ class Question(object):
 
     def choose_question(self):
         question = random.choice(self.question_list)
+        print "chosen question: {}".format(question)
         return getattr(self, question)
 
     def copies_in_full_deck(self, deck):
