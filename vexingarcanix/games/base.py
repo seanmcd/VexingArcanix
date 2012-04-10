@@ -87,6 +87,14 @@ class Question(object):
         a list that automatically gets populated with questions, but
         implementing that would be very time-consuming - so we're doing it the
         dumb way for now.
+
+        Question-generating methods should take as arguments only a Deck object
+        and **kwargs, and should return a tuple of the form (string
+        representation of question, correct answer, list of answers to choose
+        from, a string to append to answers, Card object for the primary card
+        that the question is about). Later we may want to modify or change that
+        last item to a string, because we'll be asking about things like "basic
+        lands" or "Psychic Pokemon" instead of a specific card.
     """
 
     def __init__(self):
@@ -100,6 +108,7 @@ class Question(object):
 
     def choose_question(self):
         question = random.choice(self.question_list)
+        print "chosen question: {}".format(question)
         return getattr(self, question)
 
     def copies_in_full_deck(self, deck):
@@ -118,34 +127,27 @@ class Question(object):
         # ... but we're still in MVP mode.
         return question_string.format(card=chosen_card.name), correct, possible, answer_suffix, chosen_card
 
-    def copies_in_opening_hand(self, deck):
+    def copies_in_opening_hand(self, deck, hand_size=7):
         question_string = "How likely is it that at least one copy of {card} will be in your opening hand?"
         answer_suffix = 'percent'
         chosen_card = random.choice(deck.decklist)
         copies = chosen_card.count
         deck_size = sum([ c.count for c in deck.decklist ])
-        hand_size = 7
 
         opening_hand_chance = hypergeom.sf(1, deck_size, copies, hand_size)
-        correct = opening_hand_chance = round(opening_hand_chance, 4) * 100
         # Consult docs or Stack Overflow: what's that first parameter mean
         # again? Thank goodness I gave the rest meaningful variable names.
         # http://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.hypergeom.html
 
-        wrongs = [ self.gen_wrong(correct, 'float', variance=x) for x in [1.2, 2.0, 6.0, 16.0] ]
-        possible = wrongs + [opening_hand_chance]
+        opening_hand_chance = opening_hand_chance * 100
+        correct_string = "{:.2f}".format(opening_hand_chance)
+
+        wrongs = self.gen_wrong(opening_hand_chance, 'percent', 4)
+        possible = wrongs + [correct_string]
         random.shuffle(possible)
 
-        print "Chance of a copy of {} in opening hand: {}".format(chosen_card.name, str(correct))
-        return question_string.format(card=chosen_card.name), correct, possible, answer_suffix, chosen_card
-
-    def average_draws_until_copy(self, deck):
-        """ Our new flagbearer hard question.
-        """
-        question_string = "If your opening hand contains zero copies of {card}, how many cards do you have to draw in order to have at least a 90 percent chance that a copy of {card} is among them?"
-        chosen_card = random.choice(deck.decklist)
-        answer_suffix = 'cards'
-        raise NotImplementedError
+        print "Chance of a copy of {} in opening hand: {}".format(chosen_card.name, correct_string)
+        return question_string.format(card=chosen_card.name), correct_string, possible, answer_suffix, chosen_card
 
     def copies_in_top_five(self, deck):
         """ Another difficult question - but also somewhat difficult to code,
@@ -161,16 +163,28 @@ class Question(object):
         remaining_copies = chosen_card.count - 1
         remaining_deck = sum([c.count for c in deck.decklist]) - 7
 
-        in_top_five_cards_chance = hypergeom.sf(1, remaining_deck, remaining_copies, 5)
-        correct = in_top_five_cards_chance = round(in_top_five_cards_chance, 4) * 100
-        wrongs = [ self.gen_wrong(correct, 'float', variance=x) for x in [1.2, 2.0, 6.0, 16.0] ]
-        possible = wrongs + [in_top_five_cards_chance, ]
+        in_top_five_chance = hypergeom.sf(1, remaining_deck, remaining_copies, 5)
+        in_top_five_chance = in_top_five_chance * 100
+        correct_string = "{:.2f}".format(in_top_five_chance)
+
+        wrongs = self.gen_wrong(in_top_five_chance, 'percent', 4)
+        possible = wrongs + [correct_string]
         random.shuffle(possible)
 
-        print "Chance of a copy of {} in the next five cards: {}".format(chosen_card.name, str(correct))
-        return question_string.format(card=chosen_card.name), correct, possible, answer_suffix, chosen_card
+        print "Chance of a copy of {} in the next five cards: {}".format(chosen_card.name, correct_string)
+        return question_string.format(card=chosen_card.name), correct_string, possible, answer_suffix, chosen_card
 
-    def gen_wrong(self, correct, flavor, **kwargs):
+    def average_draws_until_copy(self, deck, opening_hand=7):
+        """ This will, once implemented, be our new flagbearer hard question -
+            it's also the one that requires the most semantic deck knowledge of the
+            generic questions. Which is to say, "any."
+        """
+        question_string = "If your opening hand contains zero copies of {card}, how many cards do you have to draw in order to have at least a 90 percent chance that a copy of {card} is among them?"
+        chosen_card = random.choice(deck.decklist)
+        answer_suffix = 'cards'
+        raise NotImplementedError
+
+    def gen_wrong(self, correct, flavor, count=1, **kwargs):
         """ For example, 'how many copies of this card are left in your deck?'
             needs to give different wrong answers than 'what are the odds that
             this card is in the top 2 cards of your deck?', and neither is
@@ -178,29 +192,51 @@ class Question(object):
             start the game as Prizes?'
         """
         if flavor is 'int':
-            pass
-        if flavor is 'float':
-            return self._gen_wrong_float(correct, kwargs.get('variance', 2.0))
+            wrongness_generator = None
+        if flavor is 'percent':
+            wrongness_generator = self._gen_wrong_percent
         if flavor is 'string':
-            pass
-        raise NotImplementedError
+            wrongness_generator = None
+        if not wrongness_generator:
+            raise NotImplementedError
+        wrongs = []
+        while len(wrongs) < count:
+            wrong = "{:.2f}".format(wrongness_generator(correct, kwargs=kwargs))
+            if wrong not in wrongs:
+                wrongs.append(wrong)
+        return wrongs
 
-    def _gen_wrong_float(self, correct, variance=2.0):
-        """ Expects floats `correct` and `variance`. Returns a float, rounded
-            to two digits, that is guaranteed to not be equal to `correct`, and
-            whose magnitude will be between 0.00 and `variance` times
-            `correct`.
+    def _gen_wrong_percent(self, correct, **kwargs):
+        """ Expects one argument: float 'correct', which should be between 0.0
+            and 100.0 inclusive. Optionally, float 'variance' (should be of
+            similar magnitude to 'correct') to determine how far a wrong answer
+            can be from the correct answer. Returns a string representation of
+            a float, rounded to two digits, that is guaranteed to not be equal
+            to 'correct', to not be greater than 100.0, and which will be
+            between 0 and the product of 'correct' and 'variance'. Note that
+            even though we need percents, we're not using round() because it
+            doesn't actually truncate numbers like 0.3 that floating-point
+            numbers cannot concisely represent. We just use string formatting
+            to truncate these numbers when we display them to the user. This is
+            fine because we use this routine to guarantee that they'll be
+            distinguishable from the correct answer.
         """
-        wrong = round(random.uniform(0, round(correct*variance, 4)), 4)
-        while wrong > 1:
-            wrong /= 10.0
-        wrong = round(wrong * 100, 2)
-        if wrong == round(correct, 2):
-            wrong = self._gen_wrong_float(correct, variance)
-        if wrong < 0.1:
-            wrong = self._gen_wrong_float(correct, variance)
-        if wrong > 4.0 * round(correct, 2):
-            wrong = self._gen_wrong_float(correct, variance)
-        if wrong < 0.2 * round(correct, 2):
-            wrong = self._gen_wrong_float(correct, variance)
-        return round(wrong, 2)
+        variance = kwargs.get('variance', 2.5)
+        print 'Trying to generate a wrong answer based on {} with {} variance.'.format(correct, variance)
+        top = correct * variance
+        wrong = random.uniform(0, top)
+
+        # Eliminate bad wrong answers.
+        if (wrong == round) or ((wrong > correct - 1) and (wrong < correct + 1)):
+            print 'Wrong answer {} too close to correct answer.'.format(wrong)
+            wrong = self._gen_wrong_percent(correct, variance=variance)
+        if (wrong < 1.0) and (correct > 5.0):
+            print 'Wrong answer {} too close to zero.'.format(wrong)
+            wrong = self._gen_wrong_percent(correct, variance=variance)
+        if (wrong > 99.0) and (correct < 95.0):
+            print 'Wrong answer {} too close to 100.'.format(wrong)
+            wrong = self._gen_wrong_percent(correct, variance=variance)
+
+        print "Generated {} as a wrong answer".format(wrong)
+        print "The percentage representation is: {:.2f}".format(wrong)
+        return wrong

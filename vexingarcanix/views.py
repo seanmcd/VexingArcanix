@@ -12,7 +12,7 @@ import random
 @view_config(route_name='give_deck', renderer='frontpage.mako')
 def deck_ingest(request):
     # Send the user a page that asks them for a deck, start up a session for them.
-    for key in ['current_deck_object', 'last_given_answer', 'game_confirmed']:
+    for key in ['current_deck_object', 'last_given_answer', 'game_confirmed', 'question_generator']:
         request.session[key] = None
     return {"foo": "bar"}
 
@@ -73,10 +73,12 @@ def generate_question(request):
         current_deck = request.session['current_deck_object'] = new_deck
 
     # Set up a Question instance.
-    if not request.session.get('question_generator', None):
+    if request.session.get('question_generator', None) is None:
         if not current_deck.game_name:
+            print "Instantiating a generic question generator..."
             question_generator = base.Question()
         else:
+            print "Instantiating a {} question generator...".format(DeckClass.game_name)
             question_generator = QuestionClass()
         request.session['question_generator'] = question_generator
 
@@ -88,6 +90,14 @@ def generate_question(request):
     # Generate a new question.
     current_question = request.session['question_generator'].choose_question()
     question_string, correct, possible_answers, answer_suffix, chosen_card = current_question(current_deck)
+
+    # Temporary hack to work around the fact that chosen_card might be a Card
+    # object or might be a string.
+    try:
+        chosen_card = chosen_card.name
+    except AttributeError:
+        pass
+
     request.session['correct_answer'] = correct
     print "Correct answer: {}".format(correct)
     print "Other answers: {}".format(possible_answers)
