@@ -88,6 +88,14 @@ def generate_question(request):
     # Generate a new question.
     current_question = request.session['question_generator'].choose_question()
     question_string, correct, possible_answers, answer_suffix, chosen_card = current_question(current_deck)
+
+    # Temporary hack to work around the fact that chosen_card might be a Card
+    # object or might be a string.
+    try:
+        chosen_card = chosen_card.name
+    except KeyError:
+        pass
+
     request.session['correct_answer'] = correct
     print "Correct answer: {}".format(correct)
     print "Other answers: {}".format(possible_answers)
