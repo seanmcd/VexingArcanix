@@ -4,6 +4,7 @@
 """
 
 from vexingarcanix.games.base import Deck, Card, Question
+import re
 
 class MTGDeck(Deck):
     """A Magic: the Gathering deck."""
@@ -64,11 +65,18 @@ class MTGCard(Card):
         pass
 
     def is_basic_land(self):
-        basics = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Snow-covered Plains', 'Snow-covered Island', 'Snow-covered Swamp', 'Snow-covered Mountain', 'Snow-covered Forest']
-        if self.name in basics:
+        basics = ['plains', 'island', 'swamp', 'mountain', 'forest', 'snow-covered plains', 'snow-covered island', 'snow-covered swamp', 'snow-covered mountain', 'snow-covered forest']
+        name = self.name.lower()
+        if name in basics:
             return True
         else:
-            return False
+            # This would mangle "Plains", but it the card was a Plains, we
+            # already caught it with the above.
+            name = re.sub(r'^(.+)s', r'\1', name)
+            name = re.sub(r'snowcovered', r'snow-covered', name)
+            if name in basics:
+                return True
+        return False
 
     # Later we'll probably prune out things that can be answered just by
     # looking at the type line. For now we'll use these methods.
