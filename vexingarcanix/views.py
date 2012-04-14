@@ -78,7 +78,7 @@ def generate_question(request):
             print "Instantiating a generic question generator..."
             question_generator = base.Question()
         else:
-            print "Instantiating a {} question generator...".format(DeckClass.game_name)
+            print u"Instantiating a {} question generator...".format(DeckClass.game_name)
             question_generator = QuestionClass()
         request.session['question_generator'] = question_generator
 
