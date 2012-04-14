@@ -56,5 +56,9 @@ publish
 # Ignore Beaker's session-data folder.
 /data
 
-# Ignore Mongrel's process-id files.
+# Ignore PID files
 /pid
+/pyramid.pid
+
+# Ignore Mongrel's SQLite config: use m2sh load to create one instead.
+/config.sqlite
