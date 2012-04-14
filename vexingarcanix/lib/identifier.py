@@ -12,23 +12,36 @@ def find_cards(text_blob):
         turn 'Jace TMS' into "Jace, the Mind Sculptor").
     """
 
-    regex = r'^\s*([0-9]+)[\sx]+?[\'"]?([\w][\w\s\-\']+[\w])[\'"$]?'
-    # Note that this assumes that we split the input on newlines.  This should
-    # give us the card name in \2, and the number of copies in \1.  Regex note:
-    # watch out for pluralizing cards whose name is singular - e.g. 'Mountains'
-    # for 'Mountain'. Is there a reasonable way to solve that? How expensive is
-    # it to just try again if a name ends in 's' and didn't match anything the
-    # first time? It's probably worth doing _eventually,_ because we want good
-    # UX, we want to be user-compassionate.
+    regex = r'^\s*([0-9]+)[\sx]+?[\'"]?(\w[\w\s\'\.-]+\w|\w+)[\'"]?[\s(]*([\w\s-]+)?\)?$'
+
+    # Attempts to match a number followed by a number followed by a card
+    # name. This should give us the card name in \2, and the number of copies
+    # in \1. Part of why this is so thorny is that it tries to be
+    # user-compassionate - it'll allow a parenthetical 'hints' at the end, and
+    # allows quoting in various ways, "5 Foo" as well as "5x Foo". Also it has
+    # to handle card names with apostrophes (e.g. Ertai's Meddling), with dots
+    # (e.g. Pokegear 3.0), and with one-letter length (e.g. N from
+    # Pokemon). Eventually it'll also have to handle delta cards from Pokemone
+    # because completionist.
 
     found_cards = []
     unknown_cards = []
+
     for s in text_blob.splitlines():
-        # TODO: deal with blank lines and duplicates
+        # TODO: Add ability to detect duplicates.
+        if re.search(r'^[\s\n]*$', s):
+            print "Found a blank line."
+            continue
         r = re.search(regex, s)
         if r:
             found_cards.append(r.groups())
-            print "Found card: {}".format(r.groups())
+            print "Found card: {}".format(r.groups()[0:2])
+            try:
+                hint = r.groups()[2]
+                print "Found a hint: {}".format(hint)
+            except IndexError:
+                hint = None
+                print "Found no hint."
         else:
             print "Couldn't identify: {}".format(s)
             unknown_cards.append(s)
