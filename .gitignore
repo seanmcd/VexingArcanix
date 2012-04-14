@@ -53,5 +53,8 @@ tutorial.db
 intermediate
 publish
 
-# Ignore Beaker's session-data folder. 
+# Ignore Beaker's session-data folder.
 /data
+
+# Ignore Mongrel's process-id files.
+/pid
