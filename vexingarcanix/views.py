@@ -128,14 +128,19 @@ def check_answer(request):
             request.session['last_was_correct'] = True
         else:
             request.session['last_was_correct'] = False
-        request.session['last_given_answer'] = current_given_answer
-        request.session['last_correct_answer'] = current_correct_answer
-    except TypeError:
-        # Remember that this is where we'll end up with answers that are
-        # strings, until we fix the above try-block to tell apart different
-        # types of answer.
-        request.session['last_given_answer'] = None
-        request.session['last_correct_answer'] = None
-        request.session['last_was_correct'] = None
+    except ValueError:
+        if current_given_answer == current_correct_answer:
+            request.session['last_was_correct'] = True
+        else:
+            request.session['last_was_correct'] = False
+    request.session['last_given_answer'] = current_given_answer
+    request.session['last_correct_answer'] = current_correct_answer
+    # except TypeError:
+    #     # Remember that this is where we'll end up with answers that are
+    #     # strings, until we fix the above try-block to tell apart different
+    #     # types of answer.
+    #     request.session['last_given_answer'] = None
+    #     request.session['last_correct_answer'] = None
+    #     request.session['last_was_correct'] = None
 
     return HTTPFound('/ask')

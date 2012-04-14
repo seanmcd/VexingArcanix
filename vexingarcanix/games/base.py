@@ -6,7 +6,7 @@
     game-specific data structures and questions.
 """
 
-import decimal, random, re
+import copy, operator, random, re
 from scipy.stats import hypergeom
 
 
@@ -102,6 +102,7 @@ class Question(object):
             'copies_in_full_deck',
             'copies_in_opening_hand',
             'copies_in_top_five',
+            'most_likely_top_card',
             # 'draws_until_copy',
             ]
         self.question_list = [] + self.generic_questions
@@ -183,6 +184,77 @@ class Question(object):
         chosen_card = random.choice(deck.decklist)
         answer_suffix = 'cards'
         raise NotImplementedError
+
+    def most_likely_top_card(self, deck):
+        """ A medium-difficulty question - removes 10-20 random cards from your
+            deck, then asks which of four options the top card of your deck is
+            most likely to be. Should be useful to most games, and it's easy to
+            implement in a game-agnostic way, so it's here instead of in
+            game-specific code.
+
+            KNOWN BUG: will break on decks with too few unique cards or where
+            too few cards have at least 2 copies in the deck. However, still
+            works on 95% of MTG/Pokemon decks.
+        """
+        question_string = "If {}have been removed from your deck, which of the following cards is most likely to be the top card of your deck?"
+        answer_suffix = "is most likely to be the top card"
+        reduced_deck = copy.deepcopy(deck)
+
+        cards_to_remove = random.choice(range(10,21))
+        print "Chose to remove {} cards".format(cards_to_remove)
+        removed_cards = {}
+        while sum([ removed_cards[key] for key in removed_cards.keys() ]) < cards_to_remove:
+            drawn_card = random.choice([ card for card in reduced_deck.decklist if card.count > 1 ])
+            print "Removed a copy of {} from the deck.".format(drawn_card.name)
+            drawn_card.count -= 1
+            print "{} cards remain in the deck.".format(sum([ card.count for card in reduced_deck.decklist ]))
+            # if the card is in the group we've already removed, just
+            # increment, otherwise add to that set.
+            if drawn_card.name in [ c for c in removed_cards.keys()]:
+                removed_cards[drawn_card.name] += 1
+            else:
+                removed_cards[drawn_card.name] = 1
+        print "Removed: {}".format(removed_cards)
+        reduced_deck_size = sum([ card.count for card in reduced_deck.decklist ])
+
+        removed_cards_string = ""
+        for key in removed_cards.keys():
+            c = removed_cards.pop(key)
+            copy_plural = "copies" if c > 1 else "copy"
+            if len(removed_cards.keys()) == 0:
+                removed_cards_string += "and "
+            removed_cards_string += "{0} {1} of {2}, ".format(c, copy_plural, key)
+        print removed_cards_string
+        print question_string.format(removed_cards_string)
+
+        choices = 4
+        chosen_cards = []
+        print "The deck is now: {}".format(reduced_deck.decklist)
+        while len(chosen_cards) < choices:
+            this_card = random.choice(reduced_deck.decklist)
+            print "Chose: {}".format(this_card.name)
+            # Second test is so that we don't have to deal with ties - however,
+            # now we just have to make sure that there are at least 4 different
+            # card counts remaining in the deck, which should be the norm - but
+            # it's not guaranteed!
+            if (this_card not in chosen_cards) and (this_card.count not in [ card.count for card in chosen_cards ]):
+                chosen_cards.append(this_card)
+                print "List now contains: {}".format([ card.name for card in chosen_cards ])
+
+        card_odds_pairings = []
+        for card in chosen_cards:
+            # top_card_odds = hypergeom.sf(1, reduced_deck_size, card.count, 1)
+            top_card_odds = card.count / float(reduced_deck_size)
+            card_odds_pairings.append((top_card_odds, card.name))
+        sorted_odds_pairings = sorted(card_odds_pairings, key=operator.itemgetter(0))
+        print "Cards with odds: {}".format(sorted_odds_pairings)
+
+        question_string = question_string.format(removed_cards_string)
+        correct = sorted_odds_pairings[-1][1]
+        # No need to shuffle: this list is already in a random order!
+        possible = [ card[1] for card in card_odds_pairings]
+
+        return question_string, correct, possible, answer_suffix, "the top card of your deck"
 
     def gen_wrong(self, correct, flavor, count=1, **kwargs):
         """ For example, 'how many copies of this card are left in your deck?'
