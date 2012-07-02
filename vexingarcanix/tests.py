@@ -5,28 +5,27 @@ from pyramid import testing
 
 from .models import DBSession
 
-class TestMyView(unittest.TestCase):
+class TestGenericQuestion(unittest.TestCase):
+    """ A class for testing the functions in the Question class in
+        games/base.py that do their own work, as opposed to the ones that get
+        subclassed/overriden.
+    """
+
     def setUp(self):
         self.config = testing.setUp()
-        from sqlalchemy import create_engine
-        engine = create_engine('sqlite://')
-        from .models import (
-            Base,
-            MyModel,
-            )
-        DBSession.configure(bind=engine)
-        Base.metadata.create_all(engine)
-        with transaction.manager:
-            model = MyModel(name='one', value=55)
-            DBSession.add(model)
+        from .games import base
+        self.my_question = base.Question()
 
     def tearDown(self):
-        DBSession.remove()
         testing.tearDown()
 
-    def test_it(self):
-        from .views import my_view
-        request = testing.DummyRequest()
-        info = my_view(request)
-        self.assertEqual(info['one'].name, 'one')
-        self.assertEqual(info['project'], 'VexingArcanix')
+    def test_validate_wrong_percent(self):
+        self.assertIsNone(self.my_question._validate_wrong_percent(50.0, 50.0))
+        self.assertIsNone(self.my_question._validate_wrong_percent(49.1, 50.0))
+        self.assertIsNone(self.my_question._validate_wrong_percent(50.9, 50.0))
+        self.assertIsNone(self.my_question._validate_wrong_percent(100.01, 50.0))
+        self.assertEqual(self.my_question._validate_wrong_percent(45.0, 50.0), 45.0)
+
+    def test_validate_wrong_int(self):
+        self.assertIsNone(self.my_question._validate_wrong_int(4, 4))
+        self.assertIsNone(self.my_question._validate_wrong_int(12, 4, answer_ceiling=5))
